@@ -10,14 +10,16 @@ const uint64_t numeroLibri  = 66;
 
 //funzione che srotola i versetti in un capitolo
 void decodeChapter(QString capitolo) {
-	int  inizioVersetto   = 0;
-	bool continua = true;
+	int  inizioVersetto = 0;
+	bool continua       = true;
 	while (continua) {
+		//cerco la posizione della stringa strong
 		auto fineVersetto = capitolo.indexOf("<strong>", inizioVersetto + 1);
 		//qDebug() << oldRos << newPos;
 		if (fineVersetto == -1) {
-			fineVersetto   = capitolo.indexOf("</p>", inizioVersetto + 1);
-			continua = false;
+			// se non e trovato l'ultimo lui capisce che deve andare alla fine del paragrafo
+			fineVersetto = capitolo.indexOf("</p>", inizioVersetto + 1);
+			continua     = false;
 		}
 
 		if (inizioVersetto > 0) {
