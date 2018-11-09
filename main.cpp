@@ -6,7 +6,21 @@
 #include <QFile>
 #include <QString>
 //config.cpp contiene la configurazione
-#include "config.cpp"
+#include "config.h"
+
+void pulisciVersetto(QString& versetto) {
+	auto inizioPulizia = versetto.indexOf("<span");
+	if (inizioPulizia == -1) { //Non lo ho trovato
+		return;
+	}
+	auto finePulizia = versetto.indexOf("</a>", inizioPulizia) + 4;
+	if (finePulizia == 3) {
+		finePulizia = versetto.indexOf("</span>", inizioPulizia) + 7;
+	}
+	versetto.remove(inizioPulizia, finePulizia - inizioPulizia);
+
+	pulisciVersetto(versetto);
+}
 
 //funzione che srotola i versetti in un capitolo
 void decodeChapter(QString& capitolo) {
@@ -14,7 +28,8 @@ void decodeChapter(QString& capitolo) {
 	bool continua       = true;
 	while (continua) {
 		//cerco la posizione della stringa strong
-		auto fineVersetto = capitolo.indexOf("<strong>", inizioVersetto + 1);
+		auto fineVersetto  = capitolo.indexOf("<strong>", inizioVersetto + 1);
+		auto fineCapoverso = capitolo.indexOf("</strong>", fineVersetto) + 9;
 		//qDebug() << oldRos << newPos;
 		if (fineVersetto == -1) {
 			// se non e trovato l'ultimo lui capisce che deve andare alla fine del paragrafo
@@ -23,10 +38,13 @@ void decodeChapter(QString& capitolo) {
 		}
 
 		if (inizioVersetto > 0) {
-			qDebug() << capitolo.mid(inizioVersetto, fineVersetto - inizioVersetto) << "\n\n ---------------------------- \n\n";
+			auto versetto = capitolo.mid(inizioVersetto, fineVersetto - inizioVersetto);
+			//	qDebug() << versetto << "\n\n ---------------------------- \n\n";
+			pulisciVersetto(versetto);
+			qDebug() << versetto << "\n\n ---------------------------- \n\n";
 		}
 
-		inizioVersetto = fineVersetto;
+		inizioVersetto = fineCapoverso;
 	}
 }
 
@@ -34,9 +52,9 @@ int main() {
 	//per scansionare i libri uno alla volta , ogni libro ha un suo id
 	for (uint64_t offsetLibro = 0; offsetLibro < numeroLibri; ++offsetLibro) {
 		//libro attuale e dato da dove iniziano i libri id5 a cui di volta in volta vado ad analizzare
-		auto    libroAttuale = inizioLibri + offsetLibro;
+		auto libroAttuale = inizioLibri + offsetLibro;
 		//stringa di testo
-		QString percorso     = cartellaBase + QString::number(libroAttuale) + estensione;
+		QString percorso = cartellaBase + QString::number(libroAttuale) + estensione;
 		qDebug() << percorso;
 		uint64_t capitoloAttuale = 1;
 		for (;;) { //la condizione di arresto è complessa
@@ -52,6 +70,7 @@ int main() {
 				QString capitolo = file.readAll();
 				decodeChapter(capitolo);
 			}
+			exit(1);
 		}
 	}
 }
